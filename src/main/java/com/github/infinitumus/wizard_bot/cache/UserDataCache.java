@@ -1,14 +1,14 @@
 package com.github.infinitumus.wizard_bot.cache;
 
 import com.github.infinitumus.wizard_bot.bot_api.BotState;
-import com.github.infinitumus.wizard_bot.bot_api.handlers.filling_profile.UserProfileData;
+import com.github.infinitumus.wizard_bot.model.UserProfileData;
 import org.springframework.stereotype.Component;
 import java.util.HashMap;
 import java.util.Map;
 @Component
 public class UserDataCache implements DataCache{
-    private Map<Long, BotState> usersBotState = new HashMap<>();
-    private Map<Long, UserProfileData> usersProfileData = new HashMap<>();
+    private final Map<Long, BotState> usersBotState = new HashMap<>();
+    private final Map<Long, UserProfileData> usersProfileData = new HashMap<>();
 
     @Override
     public void setCurrentBotState(long userId, BotState botState) {

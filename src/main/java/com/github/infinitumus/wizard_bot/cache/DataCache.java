@@ -1,7 +1,7 @@
 package com.github.infinitumus.wizard_bot.cache;
 
 import com.github.infinitumus.wizard_bot.bot_api.BotState;
-import com.github.infinitumus.wizard_bot.bot_api.handlers.filling_profile.UserProfileData;
+import com.github.infinitumus.wizard_bot.model.UserProfileData;
 
 public interface DataCache {
     void setCurrentBotState(long userId, BotState botState);

@@ -8,7 +8,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
  */
 @Service
 public class ReplyMessageService {
-    private LocaleMessageService localeMessageService;
+    private final LocaleMessageService localeMessageService;
 
     public ReplyMessageService(LocaleMessageService localeMessageService) {
         this.localeMessageService = localeMessageService;
@@ -19,5 +19,11 @@ public class ReplyMessageService {
     }
     public SendMessage getReplyMessage(String chatId, String replyMessage, Object... args){
         return new SendMessage(chatId, localeMessageService.getMessage(replyMessage, args));
+    }
+
+    public String getReplyText(String replyText) {
+        return localeMessageService.getMessage(replyText);
+    }public String getReplyText(String replyText, Object... args) {
+        return localeMessageService.getMessage(replyText, args);
     }
 }

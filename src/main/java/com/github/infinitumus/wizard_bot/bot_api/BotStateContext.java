@@ -14,7 +14,7 @@ import java.util.Map;
  */
 @Component
 public class BotStateContext {
-    private Map<BotState, InputMessageHandler> messageHandlers = new HashMap<>();
+    private final Map<BotState, InputMessageHandler> messageHandlers = new HashMap<>();
 
     public BotStateContext(@Autowired List<InputMessageHandler> messageHandlers){
         messageHandlers.forEach(handler ->this.messageHandlers.put(handler.getHandlerName(), handler));
@@ -33,7 +33,7 @@ public class BotStateContext {
 
     private boolean isFillingProfileState(BotState currentState) {
         return switch (currentState) {
-            case ASK_AGE, ASK_NUM, PROFILE_FILLED, ASK_FILM, ASK_NAME, FILLING_PROFILE, ASK_SONG, ASK_COLOR, ASK_GENDER ->
+            case ASK_AGE, ASK_NUM, ASK_FILM, ASK_NAME, FILLING_PROFILE, ASK_SONG, ASK_COLOR, ASK_GENDER, PROFILE_FILLED->
                     true;
             default -> false;
         };
