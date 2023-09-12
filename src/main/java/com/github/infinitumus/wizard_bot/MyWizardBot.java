@@ -5,6 +5,7 @@ import org.springframework.util.ResourceUtils;
 import org.telegram.telegrambots.bots.TelegramWebhookBot;
 import org.telegram.telegrambots.meta.api.methods.BotApiMethod;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Update;
@@ -69,15 +70,23 @@ public class MyWizardBot extends TelegramWebhookBot {
         }
     }
 
-    public void sendDocument(String chatId, String caption, File sendFile){
-        SendDocument sendDocument = new SendDocument();
-        sendDocument.setChatId(chatId);
-        sendDocument.setCaption(caption);
-        sendDocument.setDocument(new InputFile(sendFile));
-        try {
-            execute(sendDocument);
-        } catch (TelegramApiException e) {
-            throw new RuntimeException(e);
+    public void sendDocument(String chatId, String caption, File sendFile) {
+        if (sendFile != null) {
+            SendDocument sendDocument = new SendDocument();
+            sendDocument.setChatId(chatId);
+            sendDocument.setCaption(caption);
+            sendDocument.setDocument(new InputFile(sendFile));
+            try {
+                execute(sendDocument);
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
+        }else {
+            try {
+                execute(new SendMessage(chatId, "Файл не найден"));
+            } catch (TelegramApiException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 }

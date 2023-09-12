@@ -6,6 +6,7 @@ import com.github.infinitumus.wizard_bot.cache.UserDataCache;
 import com.github.infinitumus.wizard_bot.model.UserProfileData;
 import com.github.infinitumus.wizard_bot.service.PredictionService;
 import com.github.infinitumus.wizard_bot.service.ReplyMessageService;
+import com.github.infinitumus.wizard_bot.service.UserProfileDataService;
 import com.github.infinitumus.wizard_bot.utils.Emojis;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -26,11 +27,13 @@ public class FillingProfileHandler implements InputMessageHandler {
     private final UserDataCache userDataCache;
     private final ReplyMessageService messageService;
     private final PredictionService predictionService;
+    private final UserProfileDataService profileDataService;
 
-    public FillingProfileHandler(UserDataCache userDataCache, ReplyMessageService messageService, PredictionService predictionService) {
+    public FillingProfileHandler(UserDataCache userDataCache, ReplyMessageService messageService, PredictionService predictionService, UserProfileDataService profileDataService) {
         this.userDataCache = userDataCache;
         this.messageService = messageService;
         this.predictionService = predictionService;
+        this.profileDataService = profileDataService;
     }
 
     @Override
@@ -107,6 +110,10 @@ public class FillingProfileHandler implements InputMessageHandler {
 
         if (botState.equals(BotState.PROFILE_FILLED)) {
             profileData.setSong(userAnswer);
+            profileData.setChatId(Long.parseLong(chatId));
+
+            profileDataService.saveUser(profileData);
+
             userDataCache.setCurrentBotState(userId, BotState.SHOW_MAIN_MENU);
 
             String profileFilledMessage = messageService.getReplyText("reply.profileFilled",

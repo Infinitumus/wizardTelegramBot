@@ -5,6 +5,7 @@ import com.github.infinitumus.wizard_bot.model.UserProfileData;
 import com.github.infinitumus.wizard_bot.cache.UserDataCache;
 import com.github.infinitumus.wizard_bot.service.MainMenuService;
 import com.github.infinitumus.wizard_bot.service.ReplyMessageService;
+import com.github.infinitumus.wizard_bot.service.UserProfileDataService;
 import com.github.infinitumus.wizard_bot.utils.Emojis;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Lazy;
@@ -24,22 +25,25 @@ import java.io.*;
 public class TelegramFacade {
     private final BotStateContext botStateContext;
     private final UserDataCache userDataCache;
+
+    private final UserProfileDataService userProfileDataService;
     private final MainMenuService mainMenuService;
     private final MyWizardBot myWizardBot;
     private final ReplyMessageService messageService;
 
-    public TelegramFacade(BotStateContext botStateContext, UserDataCache userDataCache, MainMenuService mainMenuService, @Lazy MyWizardBot myWizardBot, ReplyMessageService messageService) {
+    public TelegramFacade(BotStateContext botStateContext, UserDataCache userDataCache, UserProfileDataService userProfileDataService, MainMenuService mainMenuService, @Lazy MyWizardBot myWizardBot, ReplyMessageService messageService) {
         this.botStateContext = botStateContext;
         this.userDataCache = userDataCache;
+        this.userProfileDataService = userProfileDataService;
         this.mainMenuService = mainMenuService;
         this.myWizardBot = myWizardBot;
         this.messageService = messageService;
     }
 
-    public BotApiMethod<?> handleUpdate(Update update){
+    public BotApiMethod<?> handleUpdate(Update update) {
         SendMessage replyMessage = null;
 
-        if (update.hasCallbackQuery()){
+        if (update.hasCallbackQuery()) {
             log.info("New message from User:{}, userId: {},  with text: {}", update.getCallbackQuery().getFrom().getUserName(),
                     update.getCallbackQuery().getFrom().getId(), update.getCallbackQuery().getData());
             CallbackQuery callbackQuery = update.getCallbackQuery();
@@ -47,7 +51,7 @@ public class TelegramFacade {
         }
 
         Message message = update.getMessage();
-        if (message != null && message.hasText()){
+        if (message != null && message.hasText()) {
             log.info("New message from User:{}, chatId: {},  with text: {}",
                     message.getFrom().getUserName(), message.getChatId(), message.getText());
             replyMessage = handleInputMessage(message);
@@ -55,7 +59,7 @@ public class TelegramFacade {
         return replyMessage;
     }
 
-    private SendMessage handleInputMessage(Message message){
+    private SendMessage handleInputMessage(Message message) {
         String inputMessage = message.getText();
         long userId = message.getFrom().getId();
         String chatId = String.valueOf(message.getChatId());
@@ -68,7 +72,10 @@ public class TelegramFacade {
             }
             case "Получить предсказание" -> botState = BotState.FILLING_PROFILE;
             case "Анкета" -> botState = BotState.SHOW_USER_PROFILE;
-            case "Скачать анкету" -> myWizardBot.sendDocument(chatId, "Ваша анкета", getUserProfile(userId));
+            case "Скачать анкету" -> {
+                myWizardBot.sendDocument(chatId, "Ваша анкета", getUserProfile(userId));
+                botState = BotState.SHOW_MAIN_MENU;
+            }
             case "Помощь" -> botState = BotState.SHOW_HELP_MENU;
             default -> botState = userDataCache.getCurrentBotState(userId);
         }
@@ -78,16 +85,18 @@ public class TelegramFacade {
     }
 
     private File getUserProfile(long userId) {
-        UserProfileData userProfileData = userDataCache.getProfileData(userId);
-        File profile;
-        try {
-            profile = ResourceUtils.getFile("classpath:static/docs/profile.txt");
-            try (FileWriter fileWriter = new FileWriter(profile.getAbsolutePath());
-                 BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)){
-                bufferedWriter.write(userProfileData.getProfile());
+        UserProfileData userProfileData = userProfileDataService.getUserProfileData(userId);
+        File profile = null;
+        if (userProfileData != null) {
+            try {
+                profile = ResourceUtils.getFile("classpath:static/docs/profile.txt");
+                try (FileWriter fileWriter = new FileWriter(profile.getAbsolutePath());
+                     BufferedWriter bufferedWriter = new BufferedWriter(fileWriter)) {
+                    bufferedWriter.write(userProfileData.getProfile());
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
         return profile;
     }
@@ -97,31 +106,31 @@ public class TelegramFacade {
         final long userId = buttonQuery.getFrom().getId();
         BotApiMethod<?> callbackAnswer = mainMenuService.getMainMenuMessage(chatId,
                 messageService.getReplyText("reply.showMainMenu", Emojis.MAGE));
-    //Fate choose button
-        if (buttonQuery.getData().equals("buttonYes")){
+        //Fate choose button
+        if (buttonQuery.getData().equals("buttonYes")) {
             callbackAnswer = messageService.getReplyMessage(chatId, "reply.askName");
             userDataCache.setCurrentBotState(userId, BotState.ASK_AGE);
-        }else  if (buttonQuery.getData().equals("buttonNo")){
+        } else if (buttonQuery.getData().equals("buttonNo")) {
             callbackAnswer = sendAnswerCallbackQuery("Возвращайся когда будешь готов", false, buttonQuery);
             userDataCache.setCurrentBotState(userId, BotState.ASK_FATE);
-        }else  if (buttonQuery.getData().equals("buttonThink")){
+        } else if (buttonQuery.getData().equals("buttonThink")) {
             callbackAnswer = sendAnswerCallbackQuery("Кнопка не поддерживается", true, buttonQuery);
             userDataCache.setCurrentBotState(userId, BotState.ASK_FATE);
         }
-    //Gender choose button
-        else if (buttonQuery.getData().equals("buttonMan")){
+        //Gender choose button
+        else if (buttonQuery.getData().equals("buttonMan")) {
             UserProfileData userProfileData = userDataCache.getProfileData(userId);
             userProfileData.setGender("М");
             userDataCache.saveProfileData(userId, userProfileData);
             userDataCache.setCurrentBotState(userId, BotState.ASK_COLOR);
             callbackAnswer = messageService.getReplyMessage(chatId, "reply.askNum");
-        }else if (buttonQuery.getData().equals("buttonWoman")){
+        } else if (buttonQuery.getData().equals("buttonWoman")) {
             UserProfileData userProfileData = userDataCache.getProfileData(userId);
             userProfileData.setGender("Ж");
             userDataCache.saveProfileData(userId, userProfileData);
             userDataCache.setCurrentBotState(userId, BotState.ASK_COLOR);
             callbackAnswer = messageService.getReplyMessage(chatId, "reply.askNum");
-        }else {
+        } else {
             userDataCache.setCurrentBotState(userId, BotState.SHOW_MAIN_MENU);
         }
         return callbackAnswer;

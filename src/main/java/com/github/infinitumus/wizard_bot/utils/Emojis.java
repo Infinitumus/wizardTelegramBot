@@ -6,7 +6,7 @@ public enum Emojis {
     SPARKLES(EmojiParser.parseToUnicode(":sparkles:")),
     SCROLL(EmojiParser.parseToUnicode(":scroll:")),
     MAGE(EmojiParser.parseToUnicode(":mage:"))
-    
+
     ;
     private final String emojiName;
 
